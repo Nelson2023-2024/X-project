@@ -2,6 +2,7 @@ import { Router } from "express";
 import bcrypt from "bcrypt";
 import { User } from "../models/user.model.js";
 import { generateJWTAndSetCookie } from "../lib/utils/generateTokenandSetCookie.js";
+import { protectRoute } from "../middleware/protectRoute.js";
 
 const router = Router();
 
@@ -96,6 +97,17 @@ router.post("/logout", async (req, res) => {
     res.status(200).json({ message: "Logout successfully" });
   } catch (error) {
     console.log(`Error in the Logout Route`, error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+router.get("/me", protectRoute, async (req, res) => {
+  try {
+    //from the req from protected route
+    const user = await User.findById(req.user._id);
+    res.status(200).json(user)
+  } catch (error) {
+    console.log(`Error in the meRoute`, error.message);
     res.status(500).json({ error: "Internal server error" });
   }
 });
