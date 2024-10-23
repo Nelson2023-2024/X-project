@@ -44,7 +44,7 @@ router.post("/signup", async (req, res) => {
       fullName,
       username,
       email,
-      password
+      password: hashedPassword
     });
 
     if (newUser) {
@@ -63,7 +63,33 @@ router.post("/signup", async (req, res) => {
     res.status(500).json({ error: "Internal server error" });
   }
 });
-router.post("/login", async (req, res) => {});
+
+router.post("/login", async (req, res) => {
+  try {
+    const { username, password } = req.body;
+
+    const user = await User.findOne({ username });
+    const isPasswordCorrect = await bcrypt.compare(
+      password,
+      user?.password || ""
+    );
+
+    if (!user || !isPasswordCorrect) {
+      return res.status(400).json({ error: "Invalid username or password" });
+    }
+
+    //generate jwt
+    generateJWTAndSetCookie(user._id, res);
+
+    res
+      .status(200)
+      .json({ success: true, user: { ...user._doc, password: undefined } });
+  } catch (error) {
+    console.log(`Error in the Login Route`, error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/logout", async (req, res) => {});
 
 export { router as authRoutes };
