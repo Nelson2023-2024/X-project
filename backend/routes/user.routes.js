@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { protectRoute } from "../middleware/protectRoute.js";
 import { User } from "../models/user.model.js";
+import { Notification } from "../models/notification.model.js";
 
 const router = Router();
 
@@ -20,7 +21,45 @@ router.get("/profile/:username", async (req, res) => {
     return res.status(500).json({ error: "Internal server error" });
   }
 });
-router.get("/suggested-to-follow", async (req, res) => {});
+
+router.get("/suggested-to-follow", async (req, res) => {
+  try {
+    const loggedInUserId = req.user._id;
+
+    //find the users that the logged in user followed
+    const usersFollowedByMe = await User.findById(loggedInUserId).select(
+      "following"
+    );
+
+    //match where the _id is not = to the loggedInUserId and give us a sample size of 10 different users
+    //Get 10 different users and nor the autheniticated user
+    const users = await User.aggregate([
+      {
+        $match: {
+          _id: { $ne: loggedInUserId }
+        }
+      },
+      { $sample: { size: 10 } }
+    ]);
+
+    //exclude users that we follow
+    const filteredUsers = users.filter(
+      (user) => !usersFollowedByMe.following.includes(user._id)
+    );
+
+    //get 4 suggested users
+    const suggestedUsers = filteredUsers.slice(0, 4);
+
+    //set each passsword to null for each user
+    suggestedUsers.forEach((user) => (user.password = null));
+
+    res.status(200).json(suggestedUsers);
+  } catch (error) {
+    console.log(`Error in suggested users route:`, error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
+
 router.post("/follow-unfollow/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -46,6 +85,8 @@ router.post("/follow-unfollow/:id", async (req, res) => {
       //unfollow user
       await User.findByIdAndUpdate(id, { $pull: { followers: req.user._id } });
       await User.findByIdAndUpdate(req.user._id, { $pull: { following: id } });
+
+      //return the id of the user as a response
       res.status(200).json({ message: "User unfollowed successfully" });
     } else {
       //follow user
@@ -53,6 +94,15 @@ router.post("/follow-unfollow/:id", async (req, res) => {
       await User.findByIdAndUpdate(req.user._id, { $push: { following: id } }); //add id of user we just followed
 
       //send notification
+      const newNotification = new Notification({
+        type: "follow",
+        from: req.user._id,
+        to: userToFollow._id
+      });
+
+      await newNotification.save();
+
+      //return the id of the user as a response
       res.status(200).json({ message: "User followed successfully" });
     }
   } catch (error) {
