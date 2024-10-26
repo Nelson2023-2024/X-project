@@ -7,6 +7,7 @@ import { authRoutes } from "./routes/authRoutes.js";
 import { userRoutes } from "./routes/user.routes.js";
 
 import { connectMongoDB } from "./db/connect.MongoDB.js";
+import { postRoutes } from "./routes/postRoutes.js";
 
 configDotenv(); // configure the dotenv'
 
@@ -24,6 +25,7 @@ app.use(cookieParser());
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/posts", postRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
