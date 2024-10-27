@@ -9,6 +9,19 @@ const router = Router();
 
 router.use(protectRoute);
 
+router.get('/all-posts', async (req, res) => {
+  try {
+    const posts = await Post.find({}).sort({ createdAt: -1 });
+
+    if (posts.length === 0) return res.status(200).json([]);
+
+    //if the length is greater than 0
+    res.status(200).json(posts);
+  } catch (error) {
+    console.log(`Error in create Post Route:`, error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 router.post('/create', async (req, res) => {
   try {
     let { text } = req.body;
