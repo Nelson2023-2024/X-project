@@ -31,6 +31,35 @@ router.get('/all-posts', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+router.get('/liked-posts/:id', async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    const likedposts = await Post.find({
+      _id: { $in: user.likedposts },
+    })
+      .populate({
+        path: 'user',
+        select: '-password',
+      })
+      .populate({
+        path: 'comments.user',
+        select: '-password',
+      });
+
+    if (likedposts.length < 1)
+      return res.status(200).json({ message: `No liked posts by ${userId}` });
+
+    res.status(200).json({ likedposts });
+  } catch (error) {
+    console.log(`Error in liked-post:`, error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 router.post('/create', async (req, res) => {
   try {
     let { text } = req.body;
@@ -58,7 +87,7 @@ router.post('/create', async (req, res) => {
     res.status(201).json({ message: 'Post created successfull', newPost });
   } catch (error) {
     console.log(`Error in create Post Route:`, error.message);
-    res.sendStatus(500);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 router.post('/like-unlike/:id', async (req, res) => {
@@ -76,10 +105,12 @@ router.post('/like-unlike/:id', async (req, res) => {
     if (userLikedPost) {
       //unlike
       await Post.updateOne({ _id: postId }, { $pull: { likes: userId } });
+      await User.updateOne({ _id: userId }, { $pull: { likedposts: postId } });
       res.status(200).json({ message: 'Post unliked sucessfully' });
     } else {
       //like
       post.likes.push(userId);
+      await User.updateOne({ _id: userId }, { $push: { likedposts: postId } });
       await post.save();
 
       //send notification
@@ -90,7 +121,7 @@ router.post('/like-unlike/:id', async (req, res) => {
       });
       await notification.save();
 
-      res.status(200).json({ message: 'Post liked succesffuly' });
+      res.status(200).json({ message: 'Post liked succesffuly', post });
     }
   } catch (error) {
     console.log('Error in like-unlike controller', error);

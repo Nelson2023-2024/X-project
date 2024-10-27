@@ -1,66 +1,73 @@
-import mongoose, { now } from "mongoose";
+import mongoose, { now } from 'mongoose';
 
 const userSchema = new mongoose.Schema(
   {
     username: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
 
     fullName: {
       type: String,
-      required: true
+      required: true,
     },
 
     password: {
       type: String,
       required: true,
-      minlength: 6
+      minlength: 6,
     },
 
     email: {
       type: String,
       required: true,
-      unique: true
+      unique: true,
     },
     followers: [
       {
         type: mongoose.Schema.Types.ObjectId, //
-        ref: "User",
-        default: []
-      }
+        ref: 'User',
+        default: [],
+      },
     ],
 
     following: [
       {
         type: mongoose.Schema.Types.ObjectId, //
-        ref: "User",
-        default: []
-      }
+        ref: 'User',
+        default: [],
+      },
     ],
 
     profileImg: {
       type: String,
-      default: ""
+      default: '',
     },
 
     coverImg: {
       type: String,
-      default: ""
+      default: '',
     },
 
     bio: {
       type: String,
-      default: ""
+      default: '',
     },
 
     link: {
       type: String,
-      default: ""
-    }
+      default: '',
+    },
+    likedposts: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Post',
+        default: [],
+      },
+    ],
   },
   { timestamps: true }
 );
 
-export const User = mongoose.model("User", userSchema);
+export const User = mongoose.model('User', userSchema);
