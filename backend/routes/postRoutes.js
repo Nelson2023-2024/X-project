@@ -39,7 +39,30 @@ router.post("/create", async (req, res) => {
   }
 });
 router.post("/like-unlike/:id", async (req, res) => {});
-router.post("/comment/:id", async (req, res) => {});
+router.post("/comment/:postId", async (req, res) => {
+  try {
+    const { text } = req.body;
+    const { postId } = req.params;
+
+    const userId = req.user._id;
+
+    if (!text) return res.status(400).json({ error: "Text field is required" });
+
+    const post = await Post.findById(postId);
+
+    if (!post) return res.status(404).json({ error: "Post not found" });
+
+    const comment = { user: userId, text };
+
+    post.comments.push(comment);
+    await post.save();
+
+    res.status(201).json(post);
+  } catch (error) {
+    console.log("Error in deletePost", error);
+    res.sendStatus(500);
+  }
+});
 router.delete("/:postId", async (req, res) => {
   try {
     const { postId } = req.params;
