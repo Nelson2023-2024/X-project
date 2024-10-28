@@ -60,6 +60,41 @@ router.get('/liked-posts/:id', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+router.get('/following-posts', async (req, res) => {
+  try {
+    if (!req.user || !req.user._id) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+    const userId = req.user._id.toString();
+    const user = await User.findById(userId);
+
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    //get the following array of autheniticated user
+    const following = user.following;
+
+    console.log('Following list:', following); // Add this line to inspect following array
+
+    //find where the foolowing array is included in the user field
+    const feedPosts = await Post.find({ user: { $in: following } })
+      .sort({
+        createdAt: -1,
+      })
+      .populate({
+        path: 'user',
+        select: '-password',
+      })
+      .populate({
+        path: 'comments.user',
+        select: '-password',
+      });
+
+    res.status(200).json(feedPosts);
+  } catch (error) {
+    console.log(`Error in following-posts Route:`, error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 router.post('/create', async (req, res) => {
   try {
     let { text } = req.body;
