@@ -24,6 +24,16 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
-router.delete('/', async (req, res) => {});
+router.delete('/', async (req, res) => {
+  try {
+    const userId = req.user._id;
+
+    //delete all notifications sent to the user
+    await Notification.deleteMany({ to: userId });
+  } catch (error) {
+    console.log('Error in deleteNotifications controller', error.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 export { router as notificationsRoutes };
