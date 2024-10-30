@@ -1,36 +1,37 @@
-import { Router } from "express";
-import { v2 as cloudinary } from "cloudinary";
-import bcrypt from "bcrypt";
-import { protectRoute } from "../middleware/protectRoute.js";
-import { User } from "../models/user.model.js";
-import { Notification } from "../models/notification.model.js";
+import { Router } from 'express';
+import { v2 as cloudinary } from 'cloudinary';
+import bcrypt from 'bcrypt';
+import { protectRoute } from '../middleware/protectRoute.js';
+import { User } from '../models/user.model.js';
+import { Notification } from '../models/notification.model.js';
+import mongoose from 'mongoose';
 
 const router = Router();
 
 //runs for all routes
 router.use(protectRoute);
 
-router.get("/profile/:username", async (req, res) => {
+router.get('/profile/:username', async (req, res) => {
   try {
     const { username } = req.params;
-    const user = await User.findOne({ username }).select("-password");
+    const user = await User.findOne({ username }).select('-password');
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     res.status(200).json(user);
   } catch (error) {
     console.log(`Error in /profile/:username route ${error.message}`);
-    return res.status(500).json({ error: "Internal server error" });
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.get("/suggested-to-follow", async (req, res) => {
+router.get('/suggested-to-follow', async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
 
     //find the users that the logged in user followed
     const usersFollowedByMe = await User.findById(loggedInUserId).select(
-      "following"
+      'following'
     );
 
     //match where the _id is not = to the loggedInUserId and give us a sample size of 10 different users
@@ -38,10 +39,10 @@ router.get("/suggested-to-follow", async (req, res) => {
     const users = await User.aggregate([
       {
         $match: {
-          _id: { $ne: loggedInUserId }
-        }
+          _id: { $ne: loggedInUserId },
+        },
       },
-      { $sample: { size: 10 } }
+      { $sample: { size: 10 } },
     ]);
 
     //exclude users that we follow
@@ -58,25 +59,30 @@ router.get("/suggested-to-follow", async (req, res) => {
     res.status(200).json(suggestedUsers);
   } catch (error) {
     console.log(`Error in suggested users route:`, error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
-router.post("/follow-unfollow/:id", async (req, res) => {
+router.post('/follow-unfollow/:id', async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Check if the provided id is a valid MongoDB ObjectId
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ error: 'Invalid user ID format' });
+    }
 
     const userToFollow = await User.findById(id);
     const currentUser = await User.findById(req.user._id);
 
-    //prevent user from following them selves
     if (id === req.user._id.toString())
+      //prevent user from following them selves
       return res
         .status(400)
         .json({ error: "You can't follow or unfollow yourself" });
 
     if (!userToFollow || !currentUser)
-      return res.status(400).json({ error: "User not found" });
+      return res.status(400).json({ error: 'User not found' });
 
     //follow or unfollow functionality
 
@@ -89,7 +95,7 @@ router.post("/follow-unfollow/:id", async (req, res) => {
       await User.findByIdAndUpdate(req.user._id, { $pull: { following: id } });
 
       //return the id of the user as a response
-      res.status(200).json({ message: "User unfollowed successfully" });
+      res.status(200).json({ message: 'User unfollowed successfully' });
     } else {
       //follow user
       await User.findByIdAndUpdate(id, { $push: { followers: req.user._id } });
@@ -97,22 +103,22 @@ router.post("/follow-unfollow/:id", async (req, res) => {
 
       //send notification
       const newNotification = new Notification({
-        type: "follow",
+        type: 'follow',
         from: req.user._id,
-        to: userToFollow._id
+        to: userToFollow._id,
       });
 
       await newNotification.save();
 
       //return the id of the user as a response
-      res.status(200).json({ message: "User followed successfully" });
+      res.status(200).json({ message: 'User followed successfully' });
     }
   } catch (error) {
-    console.log(`Error in /follow-unfollow/:id route ${error.message}`);
-    return res.status(500).json({ error: "Internal server error" });
+    console.log(`Error in /follow-unfollow/:id route`, error.message);
+    return res.status(500).json({ error: 'Internal server error' });
   }
 });
-router.post("/update-profile", async (req, res) => {
+router.post('/update-profile', async (req, res) => {
   const { fullName, email, username, currentPassword, newPassword, bio, link } =
     req.body;
 
@@ -122,22 +128,22 @@ router.post("/update-profile", async (req, res) => {
   try {
     let user = await User.findById(userId);
 
-    if (!user) return res.status(404).json({ error: "User not found" });
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
     if ((!newPassword && currentPassword) || (!currentPassword && newPassword))
       return res.status(400).json({
-        error: "Please provide both current password and new password"
+        error: 'Please provide both current password and new password',
       });
 
     if (currentPassword && newPassword) {
       const isMatch = await bcrypt.compare(currentPassword, user.password);
 
       if (!isMatch)
-        return res.status(400).json({ error: "Current password is incorrect" });
+        return res.status(400).json({ error: 'Current password is incorrect' });
       if (newPassword.length < 6)
         return res
           .status(400)
-          .json({ error: "Password must be longer that 6 characters" });
+          .json({ error: 'Password must be longer that 6 characters' });
 
       const hashPassword = await bcrypt.hash(newPassword, 10);
     }
@@ -148,7 +154,7 @@ router.post("/update-profile", async (req, res) => {
       //if user already ahs a profile image delete it
       if (user.profileImg) {
         await cloudinary.uploader.destroy(
-          user.profileImg.split("/").pop().split(".")[0]
+          user.profileImg.split('/').pop().split('.')[0]
         );
       }
       const uploadedResponse = await cloudinary.uploader.upload(profileImg);
@@ -159,7 +165,7 @@ router.post("/update-profile", async (req, res) => {
     if (coverImg) {
       if (user.coverImg) {
         await cloudinary.uploader.destroy(
-          user.profileImg.split("/").pop().split(".")[0]
+          user.profileImg.split('/').pop().split('.')[0]
         );
       }
       const uploadedResponse = await cloudinary.uploader.upload(coverImg);
@@ -181,8 +187,8 @@ router.post("/update-profile", async (req, res) => {
 
     return res.status(200).json(user);
   } catch (error) {
-    console.log("Error in update-profile route:", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.log('Error in update-profile route:', error.message);
+    res.status(500).json({ error: 'Internal server error' });
   }
 });
 
