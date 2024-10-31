@@ -4,6 +4,7 @@ import HomePage from './pages/auth/Home/HomePage';
 import SignupPage from './pages/auth/Signup/SignupPage';
 import LoginPage from './pages/auth/Login/LoginPage';
 import Sidebar from './components/common/Sidebar';
+import RightPanel from './components/common/RightPanel';
 
 const App = () => {
   return (
@@ -15,6 +16,7 @@ const App = () => {
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
       </Routes>
+      <RightPanel />
     </div>
   );
 };
