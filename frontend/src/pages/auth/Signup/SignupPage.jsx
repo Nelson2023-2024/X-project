@@ -7,6 +7,8 @@ import { MdOutlineMail } from 'react-icons/md';
 import { FaUser } from 'react-icons/fa';
 import { MdPassword } from 'react-icons/md';
 import { MdDriveFileRenameOutline } from 'react-icons/md';
+import { useMutation } from '@tanstack/react-query';
+import toast from 'react-hot-toast';
 
 const SignUpPage = () => {
   const [formData, setFormData] = useState({
@@ -16,12 +18,40 @@ const SignUpPage = () => {
     password: '',
   });
 
+  const { mutate, isError, isPending, error } = useMutation({
+    mutationFn: async ({ email, username, fullName, password }) => {
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, username, fullName, password }),
+      });
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      console.log(data);
+
+      return data;
+    },
+    onSuccess: (data) => {
+      toast.success('Account created successfully');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(formData);
+    mutate(formData);
   };
 
-  const isError = false;
+  // const isError = false;
   return (
     <div className="max-w-screen-xl mx-auto flex h-screen px-10 ">
       <div className="flex-1 hidden lg:flex items-center  justify-center">
@@ -97,10 +127,13 @@ const SignUpPage = () => {
           </label>
 
           {/* signup button */}
-          <button className="btn rounded-full btn-primary text-white">
-            Sign up
+          <button
+            className="btn rounded-full btn-primary text-white"
+            disabled={isPending}
+          >
+            {isPending ? 'Loading' : 'Sign up'}
           </button>
-          {isError && <p className="text-red-500">Something went wrong</p>}
+          {isError && <p className="text-red-500">{error.message}</p>}
         </form>
         <div className="flex flex-col lg:w-2/3 gap-2 mt-4">
           <p className="text-white text-lg">Already have an account?</p>
