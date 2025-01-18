@@ -1,23 +1,59 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from "react";
+import { Link } from "react-router-dom";
 
-import XSvg from '../../../components/svgs/X';
+import XSvg from "../../../components/svgs/X";
 
-import { MdOutlineMail } from 'react-icons/md';
-import { MdPassword } from 'react-icons/md';
+import { MdOutlineMail } from "react-icons/md";
+import { MdPassword } from "react-icons/md";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    username: '',
-    password: '',
+    username: "",
+    password: "",
+  });
+
+  const {
+    mutate: login,
+    isError,
+    isPending,
+    error,
+  } = useMutation({
+    mutationFn: async ({ username, password }) => {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      console.log(data);
+
+      return data;
+    },
+
+    onSuccess: () => {
+      toast.success("Logged In successfully");
+    },
+
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     console.log(formData);
+    login(formData);
   };
-
-  const isError = false;
 
   return (
     <div className="max-w-screen-xl mx-auto flex h-screen">
@@ -55,10 +91,13 @@ const LoginPage = () => {
               value={formData.password}
             />
           </label>
-          <button className="btn rounded-full btn-primary text-white">
-            Login
+          <button
+            className="btn rounded-full btn-primary text-white"
+            disabled={isPending}
+          >
+            {isPending ? "Loading..." : "Login"}
           </button>
-          {isError && <p className="text-red-500">Something went wrong</p>}
+          {isError && <p className="text-red-500">{error.message}</p>}
         </form>
         <div className="flex flex-col gap-2 mt-4">
           <p className="text-white text-lg">{"Don't"} have an account?</p>
