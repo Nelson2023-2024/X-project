@@ -1,17 +1,49 @@
-import XSvg from '../svgs/X';
+import XSvg from "../svgs/X";
 
-import { MdHomeFilled } from 'react-icons/md';
-import { IoNotifications } from 'react-icons/io5';
-import { FaUser } from 'react-icons/fa';
-import { Link } from 'react-router-dom';
-import { BiLogOut } from 'react-icons/bi';
+import { MdHomeFilled } from "react-icons/md";
+import { IoNotifications } from "react-icons/io5";
+import { FaUser } from "react-icons/fa";
+import { Link } from "react-router-dom";
+import { BiLogOut } from "react-icons/bi";
+import { useMutation } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 
 const Sidebar = () => {
   const data = {
-    fullName: 'John Doe',
-    username: 'johndoe',
-    profileImg: '/avatars/boy1.png',
+    fullName: "John Doe",
+    username: "johndoe",
+    profileImg: "/avatars/boy1.png",
   };
+
+  const { mutate: logout, isPending, isError, error } = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/auth/logout', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+
+      const data = response.json()
+
+      if (!response.ok || data.error) {
+        throw new Error(data.error || "Something went wrong");
+      }
+
+      return data
+    },
+    onSuccess: () => {
+      toast.success("Logged out successfully")
+    },
+    onError: (error) => {
+      toast.error(error.message)
+    }
+  });
+
+  function handleLogout(event) {
+    event.preventDefault() //prevents navigation to that page
+    logout()
+  }
 
   return (
     <div className="md:flex-[2_2_0] w-18 max-w-52">
@@ -56,7 +88,7 @@ const Sidebar = () => {
           >
             <div className="avatar hidden md:inline-flex">
               <div className="w-8 rounded-full">
-                <img src={data?.profileImg || '/avatar-placeholder.png'} />
+                <img src={data?.profileImg || "/avatar-placeholder.png"} />
               </div>
             </div>
             <div className="flex justify-between flex-1">
@@ -66,8 +98,9 @@ const Sidebar = () => {
                 </p>
                 <p className="text-slate-500 text-sm">@{data?.username}</p>
               </div>
-              <BiLogOut className="w-5 h-5 cursor-pointer" />
             </div>
+            <BiLogOut className="w-5 h-5 cursor-pointer" onClick={handleLogout} />
+
           </Link>
         )}
       </div>
