@@ -3,17 +3,24 @@ import XSvg from "../svgs/X";
 import { MdHomeFilled } from "react-icons/md";
 import { IoNotifications } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { BiLogOut } from "react-icons/bi";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 
 const Sidebar = () => {
+
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+
   const data = {
     fullName: "John Doe",
     username: "johndoe",
     profileImg: "/avatars/boy1.png",
   };
+
+
 
   const { mutate: logout, isPending, isError, error } = useMutation({
     mutationFn: async () => {
@@ -33,7 +40,8 @@ const Sidebar = () => {
       return data
     },
     onSuccess: () => {
-      toast.success("Logged out successfully")
+      queryClient.invalidateQueries({ queryKey: ["authUser"] })
+      queryClient.setQueryData(['authUser'], null)
     },
     onError: (error) => {
       toast.error(error.message)
