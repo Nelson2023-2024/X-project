@@ -9,7 +9,7 @@ const router = Router();
 
 router.use(protectRoute);
 
-router.get('/all-posts', async (req, res) => {
+router.get('/all', async (req, res) => {
   try {
     const posts = await Post.find({})
       .sort({ createdAt: -1 })
