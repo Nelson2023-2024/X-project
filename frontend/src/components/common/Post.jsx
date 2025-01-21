@@ -1,19 +1,25 @@
-import { FaRegComment } from 'react-icons/fa';
-import { BiRepost } from 'react-icons/bi';
-import { FaRegHeart } from 'react-icons/fa';
-import { FaRegBookmark } from 'react-icons/fa6';
-import { FaTrash } from 'react-icons/fa';
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { FaRegComment } from "react-icons/fa";
+import { BiRepost } from "react-icons/bi";
+import { FaRegHeart } from "react-icons/fa";
+import { FaRegBookmark } from "react-icons/fa6";
+import { FaTrash } from "react-icons/fa";
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 
 const Post = ({ post }) => {
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
+
+  //get authUser
+  const { data: authUser } = useQuery({ queryKey: ["authUser"] });
+
   const postOwner = post.user;
   const isLiked = false;
 
-  const isMyPost = true;
+  //hide or show the delete button if it is my post or not
+  const isMyPost = authUser._id === post.user._id;
 
-  const formattedDate = '1h';
+  const formattedDate = "1h";
 
   const isCommenting = false;
 
@@ -33,7 +39,7 @@ const Post = ({ post }) => {
             to={`/profile/${postOwner.username}`}
             className="w-8 rounded-full overflow-hidden"
           >
-            <img src={postOwner.profileImg || '/avatar-placeholder.png'} />
+            <img src={postOwner.profileImg || "/avatar-placeholder.png"} />
           </Link>
         </div>
         <div className="flex flex-col flex-1">
@@ -73,7 +79,7 @@ const Post = ({ post }) => {
                 className="flex gap-1 items-center cursor-pointer group"
                 onClick={() =>
                   document
-                    .getElementById('comments_modal' + post._id)
+                    .getElementById("comments_modal" + post._id)
                     .showModal()
                 }
               >
@@ -102,7 +108,7 @@ const Post = ({ post }) => {
                             <img
                               src={
                                 comment.user.profileImg ||
-                                '/avatar-placeholder.png'
+                                "/avatar-placeholder.png"
                               }
                             />
                           </div>
@@ -135,7 +141,7 @@ const Post = ({ post }) => {
                       {isCommenting ? (
                         <span className="loading loading-spinner loading-md"></span>
                       ) : (
-                        'Post'
+                        "Post"
                       )}
                     </button>
                   </form>
@@ -163,7 +169,7 @@ const Post = ({ post }) => {
 
                 <span
                   className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                    isLiked ? 'text-pink-500' : ''
+                    isLiked ? "text-pink-500" : ""
                   }`}
                 >
                   {post.likes.length}
