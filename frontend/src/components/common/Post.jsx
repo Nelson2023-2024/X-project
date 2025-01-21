@@ -66,7 +66,7 @@ const Post = ({ post }) => {
     e.preventDefault();
   };
 
-  const handleLikePost = () => {};
+  const handleLikePost = () => { };
 
   return (
     <>
@@ -107,12 +107,15 @@ const Post = ({ post }) => {
           <div className="flex flex-col gap-3 overflow-hidden">
             <span>{post.text}</span>
             {post.img && (
-              <img
-                src={post.img}
-                className="h-80 object-contain rounded-lg border border-gray-700"
-                alt=""
-              />
+              <div className="aspect-w-20 aspect-h-1">
+                <img
+                  src={post.img}
+                  className="object-cover w-full h-full rounded-lg border border-gray-700"
+                  alt=""
+                />
+              </div>
             )}
+
           </div>
           <div className="flex justify-between mt-3">
             <div className="flex gap-4 items-center w-2/3 justify-between">
@@ -209,9 +212,8 @@ const Post = ({ post }) => {
                 )}
 
                 <span
-                  className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-                    isLiked ? "text-pink-500" : ""
-                  }`}
+                  className={`text-sm text-slate-500 group-hover:text-pink-500 ${isLiked ? "text-pink-500" : ""
+                    }`}
                 >
                   {post.likes.length}
                 </span>
